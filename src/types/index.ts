@@ -8,6 +8,7 @@ export interface Month {
   user_id: string;
   year: number;
   month: number;
+  name?: string; // Custom name for the month
   income_start: number;
   income_middle: number;
   created_at: string;

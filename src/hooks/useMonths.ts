@@ -5,9 +5,11 @@ import {
   orderBy,
   onSnapshot,
   doc,
-  setDoc,
+  addDoc,
   updateDoc,
-  getDocs
+  deleteDoc,
+  getDocs,
+  writeBatch
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { Month, MonthSummary, Bill } from '@/types';
@@ -80,57 +82,61 @@ export function useMonths() {
     return () => unsubscribe();
   }, [user]);
 
-  // Create new month
-  const createMonth = useCallback(async (year: number, month: number) => {
+  // Create new month (Auto ID to allow duplicates/custom names)
+  const createMonth = useCallback(async (year: number, month: number, name?: string) => {
     if (!user) return;
 
-    const monthId = `${year}-${String(month).padStart(2, '0')}`;
-    const monthRef = doc(db, `users/${user.uid}/months/${monthId}`);
+    const monthsRef = collection(db, `users/${user.uid}/months`);
 
-    await setDoc(monthRef, {
+    await addDoc(monthsRef, {
       user_id: user.uid,
       year,
       month,
+      name: name || '',
       income_start: 0,
       income_middle: 0,
       created_at: new Date().toISOString(),
     });
   }, [user]);
 
-  // Update income values
-  const updateIncome = useCallback(async (monthId: string, start: number, middle: number) => {
+  // Update month (name or income)
+  const updateMonth = useCallback(async (monthId: string, data: Partial<Month>) => {
     if (!user) return;
-
     const monthRef = doc(db, `users/${user.uid}/months/${monthId}`);
-    await updateDoc(monthRef, {
+    await updateDoc(monthRef, data);
+  }, [user]);
+
+  // Update income values (wrapper for updateMonth for backward compatibility)
+  const updateIncome = useCallback(async (monthId: string, start: number, middle: number) => {
+    await updateMonth(monthId, {
       income_start: start,
       income_middle: middle,
     });
+  }, [updateMonth]);
+
+  // Delete month and its subcollections (bills)
+  const deleteMonth = useCallback(async (monthId: string) => {
+    if (!user) return;
+
+    try {
+      // 1. Delete all bills in subcollection
+      const billsRef = collection(db, `users/${user.uid}/months/${monthId}/bills`);
+      const billsSnapshot = await getDocs(billsRef);
+
+      const batch = writeBatch(db);
+      billsSnapshot.docs.forEach((doc) => {
+        batch.delete(doc.ref);
+      });
+      await batch.commit();
+
+      // 2. Delete the month document itself
+      const monthRef = doc(db, `users/${user.uid}/months/${monthId}`);
+      await deleteDoc(monthRef);
+    } catch (error) {
+      console.error("Error deleting month:", error);
+      throw error;
+    }
   }, [user]);
 
-  // Ensure month exists (create if not)
-  const ensureMonth = useCallback(async (year: number, month: number) => {
-    if (!user) return null;
-
-    const monthId = `${year}-${String(month).padStart(2, '0')}`;
-    const monthRef = doc(db, `users/${user.uid}/months/${monthId}`);
-
-    // Try to get existing month
-    const existingMonth = months.find(m => m.id === monthId);
-    if (existingMonth) return existingMonth;
-
-    // Create if doesn't exist
-    await setDoc(monthRef, {
-      user_id: user.uid,
-      year,
-      month,
-      income_start: 0,
-      income_middle: 0,
-      created_at: new Date().toISOString(),
-    }, { merge: true });
-
-    return null;
-  }, [user, months]);
-
-  return { months, loading, createMonth, updateIncome, ensureMonth };
+  return { months, loading, createMonth, updateMonth, updateIncome, deleteMonth };
 }
