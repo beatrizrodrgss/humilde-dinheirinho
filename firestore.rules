@@ -1,0 +1,29 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper function to check authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+      
+      // Months subcollection
+      match /months/{monthId} {
+        allow read, write: if isOwner(userId);
+        
+        // Bills subcollection
+        match /bills/{billId} {
+          allow read, write: if isOwner(userId);
+        }
+      }
+    }
+  }
+}
