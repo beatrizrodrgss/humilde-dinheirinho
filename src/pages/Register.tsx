@@ -8,6 +8,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { Wallet } from 'lucide-react';
 
 export default function Register() {
   const [email, setEmail] = useState('');
@@ -67,7 +68,10 @@ export default function Register() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
+        <CardHeader className="space-y-1 flex flex-col items-center">
+          <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-2">
+            <Wallet className="w-6 h-6 text-primary" />
+          </div>
           <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
           <CardDescription className="text-center">
             Preencha os dados abaixo para começar
