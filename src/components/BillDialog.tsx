@@ -85,7 +85,13 @@ export default function BillDialog({ open, onOpenChange, bill, initialType, onSa
                         <Input
                             type="number"
                             value={formData.amount}
-                            onChange={e => setFormData({ ...formData, amount: e.target.value })}
+                            onChange={e => {
+                                let value = e.target.value;
+                                if (value.length > 1 && value.startsWith('0') && value[1] !== '.') {
+                                    value = value.replace(/^0+/, '');
+                                }
+                                setFormData({ ...formData, amount: value });
+                            }}
                             placeholder="0,00"
                             onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
                         />

@@ -7,6 +7,18 @@ import BillList from '@/components/BillList';
 import FinancialSummary from '@/components/FinancialSummary';
 import IncomeInput from '@/components/IncomeInput';
 import BillDialog from '@/components/BillDialog';
+import FinancialCharts from '@/components/FinancialCharts';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { getMonthName } from '@/lib/utils';
 import { Bill, BillType } from '@/types';
@@ -27,6 +39,7 @@ export default function MonthView() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [dialogType, setDialogType] = useState<BillType>('start');
+  const [billToDelete, setBillToDelete] = useState<string | null>(null);
 
   const handleSaveIncome = async (start: number, middle: number) => {
     if (!currentMonth) return;
@@ -61,14 +74,20 @@ export default function MonthView() {
     }
   };
 
-  const handleDeleteBill = async (id: string) => {
-    if (confirm('Tem certeza que deseja excluir esta conta?')) {
-      try {
-        await deleteBill(id);
-        toast.success('Conta excluída');
-      } catch (error) {
-        toast.error('Erro ao excluir');
-      }
+  const handleDeleteClick = (id: string) => {
+    setBillToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!billToDelete) return;
+
+    try {
+      await deleteBill(billToDelete);
+      toast.success('Conta excluída');
+    } catch (error) {
+      toast.error('Erro ao excluir');
+    } finally {
+      setBillToDelete(null);
     }
   };
 
@@ -126,6 +145,15 @@ export default function MonthView() {
       {/* Summary Cards */}
       {summary && <FinancialSummary summary={summary} />}
 
+      {/* Charts */}
+      {currentMonth && summary && (
+        <FinancialCharts
+          month={currentMonth}
+          bills={bills}
+          summary={summary}
+        />
+      )}
+
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Start of Month Section */}
         <div className="space-y-4">
@@ -147,7 +175,7 @@ export default function MonthView() {
             total={totalStart}
             onAdd={() => handleOpenAdd('start')}
             onToggleStatus={toggleStatus}
-            onDelete={handleDeleteBill}
+            onDelete={handleDeleteClick}
             onEdit={handleOpenEdit}
           />
         </div>
@@ -172,7 +200,7 @@ export default function MonthView() {
             total={totalMiddle}
             onAdd={() => handleOpenAdd('middle')}
             onToggleStatus={toggleStatus}
-            onDelete={handleDeleteBill}
+            onDelete={handleDeleteClick}
             onEdit={handleOpenEdit}
           />
         </div>
@@ -185,6 +213,23 @@ export default function MonthView() {
         initialType={dialogType}
         onSave={handleSaveBill}
       />
+
+      <AlertDialog open={!!billToDelete} onOpenChange={(open) => !open && setBillToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir conta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

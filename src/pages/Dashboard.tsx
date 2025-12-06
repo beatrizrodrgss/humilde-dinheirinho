@@ -7,11 +7,22 @@ import { useMonths } from '@/hooks/useMonths';
 import { Loader2, Plus, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { Month } from '@/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export default function Dashboard() {
   const { months, loading, createMonth, updateMonth, deleteMonth } = useMonths();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMonth, setEditingMonth] = useState<Month | null>(null);
+  const [monthToDelete, setMonthToDelete] = useState<string | null>(null);
 
   const handleSaveMonth = async (year: number, month: number, name: string) => {
     try {
@@ -33,14 +44,20 @@ export default function Dashboard() {
     setIsDialogOpen(true);
   };
 
-  const handleDeleteMonth = async (monthId: string) => {
-    if (confirm('Tem certeza que deseja excluir este mês e todas as suas contas?')) {
-      try {
-        await deleteMonth(monthId);
-        toast.success('Mês excluído com sucesso');
-      } catch (error) {
-        toast.error('Erro ao excluir mês');
-      }
+  const handleDeleteClick = (monthId: string) => {
+    setMonthToDelete(monthId);
+  };
+
+  const confirmDelete = async () => {
+    if (!monthToDelete) return;
+
+    try {
+      await deleteMonth(monthToDelete);
+      toast.success('Mês excluído com sucesso');
+    } catch (error) {
+      toast.error('Erro ao excluir mês');
+    } finally {
+      setMonthToDelete(null);
     }
   };
 
@@ -93,7 +110,7 @@ export default function Dashboard() {
               month={month}
               summary={month.summary}
               onEdit={() => handleEditMonth(month)}
-              onDelete={() => handleDeleteMonth(month.id)}
+              onDelete={() => handleDeleteClick(month.id)}
             />
           ))}
         </div>
@@ -105,6 +122,23 @@ export default function Dashboard() {
         monthToEdit={editingMonth}
         onSave={handleSaveMonth}
       />
+
+      <AlertDialog open={!!monthToDelete} onOpenChange={(open) => !open && setMonthToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir mês?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso excluirá permanentemente o mês e todas as contas associadas a ele.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

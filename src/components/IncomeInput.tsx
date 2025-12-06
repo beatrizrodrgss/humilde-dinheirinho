@@ -23,8 +23,13 @@ export default function IncomeInput({ label, initialValue, onSave, colorClass }:
     }, [initialValue]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setValue(e.target.value);
-        setHasChanges(Number(e.target.value) !== initialValue);
+        let newValue = e.target.value;
+        // Remove leading zeros if not a decimal
+        if (newValue.length > 1 && newValue.startsWith('0') && newValue[1] !== '.') {
+            newValue = newValue.replace(/^0+/, '');
+        }
+        setValue(newValue);
+        setHasChanges(Number(newValue) !== initialValue);
     };
 
     const handleSave = async () => {
