@@ -7,7 +7,10 @@ import BillList from '@/components/BillList';
 import FinancialSummary from '@/components/FinancialSummary';
 import IncomeInput from '@/components/IncomeInput';
 import BillDialog from '@/components/BillDialog';
+import IncomeDetailsDialog from '@/components/IncomeDetailsDialog';
 import FinancialCharts from '@/components/FinancialCharts';
+import MonthHeader from './month-view/MonthHeader';
+import MonthContent from './month-view/MonthContent';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -19,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { getMonthName } from '@/lib/utils';
 import { Bill, BillType } from '@/types';
 import { toast } from 'sonner';
@@ -27,7 +30,7 @@ import { toast } from 'sonner';
 export default function MonthView() {
   const { year, month } = useParams();
   const navigate = useNavigate();
-  const { months, updateIncome, loading: loadingMonths } = useMonths();
+  const { months, updateIncome, updateMonth, loading: loadingMonths } = useMonths();
 
   const currentMonth = months.find(
     m => m.year === Number(year) && m.month === Number(month)
@@ -37,15 +40,19 @@ export default function MonthView() {
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isIncomeDialogOpen, setIsIncomeDialogOpen] = useState(false);
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [dialogType, setDialogType] = useState<BillType>('start');
   const [billToDelete, setBillToDelete] = useState<string | null>(null);
 
   const handleSaveIncome = async (start: number, middle: number) => {
+    // Legacy handler, kept for backward compatibility if needed, but primary update is via dialog now
     if (!currentMonth) return;
     await updateIncome(currentMonth.id, start, middle);
     toast.success('Renda atualizada!');
   };
+
+
 
   const handleOpenAdd = (type: BillType) => {
     setEditingBill(null);
@@ -105,7 +112,9 @@ export default function MonthView() {
 
     const incStart = Number(currentMonth.income_start) || 0;
     const incMiddle = Number(currentMonth.income_middle) || 0;
-    const totalInc = incStart + incMiddle;
+    const extraIncomes = currentMonth.extra_incomes || [];
+    const totalExtra = extraIncomes.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+    const totalInc = incStart + incMiddle + totalExtra;
     const totalExp = totalStart + totalMiddle;
 
     return {
@@ -130,20 +139,15 @@ export default function MonthView() {
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="hover:bg-gray-100">
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold capitalize text-gray-900">
-            {getMonthName(currentMonth.month)} {currentMonth.year}
-          </h1>
-          <p className="text-muted-foreground text-sm">Gerencie suas contas do mês</p>
-        </div>
-      </div>
+      <MonthHeader year={currentMonth.year} month={currentMonth.month} />
 
       {/* Summary Cards */}
-      {summary && <FinancialSummary summary={summary} />}
+      {summary && (
+        <FinancialSummary
+          summary={summary}
+          onIncomeClick={() => setIsIncomeDialogOpen(true)}
+        />
+      )}
 
       {/* Charts */}
       {currentMonth && summary && (
@@ -154,57 +158,18 @@ export default function MonthView() {
         />
       )}
 
-      <div className="grid lg:grid-cols-2 gap-8">
-        {/* Start of Month Section */}
-        <div className="space-y-4">
-          <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100 shadow-sm">
-            <h2 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
-              📅 Início do Mês (1-15)
-            </h2>
-            <IncomeInput
-              label="Recebimento Início"
-              initialValue={currentMonth.income_start}
-              onSave={(val) => handleSaveIncome(val, currentMonth.income_middle)}
-              colorClass="text-blue-700"
-            />
-          </div>
-
-          <BillList
-            title="Contas Início"
-            bills={startBills}
-            total={totalStart}
-            onAdd={() => handleOpenAdd('start')}
-            onToggleStatus={toggleStatus}
-            onDelete={handleDeleteClick}
-            onEdit={handleOpenEdit}
-          />
-        </div>
-
-        {/* Middle of Month Section */}
-        <div className="space-y-4">
-          <div className="bg-purple-50/50 p-4 rounded-xl border border-purple-100 shadow-sm">
-            <h2 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
-              📅 Meio do Mês (16-31)
-            </h2>
-            <IncomeInput
-              label="Recebimento Quinzena"
-              initialValue={currentMonth.income_middle}
-              onSave={(val) => handleSaveIncome(currentMonth.income_start, val)}
-              colorClass="text-purple-700"
-            />
-          </div>
-
-          <BillList
-            title="Contas Quinzena"
-            bills={middleBills}
-            total={totalMiddle}
-            onAdd={() => handleOpenAdd('middle')}
-            onToggleStatus={toggleStatus}
-            onDelete={handleDeleteClick}
-            onEdit={handleOpenEdit}
-          />
-        </div>
-      </div>
+      <MonthContent
+        currentMonth={currentMonth}
+        startBills={startBills}
+        middleBills={middleBills}
+        totalStart={totalStart}
+        totalMiddle={totalMiddle}
+        onSaveIncome={handleSaveIncome}
+        onAddBill={handleOpenAdd}
+        onToggleStatus={toggleStatus}
+        onDeleteBill={handleDeleteClick}
+        onEditBill={handleOpenEdit}
+      />
 
       <BillDialog
         open={isDialogOpen}
@@ -213,6 +178,17 @@ export default function MonthView() {
         initialType={dialogType}
         onSave={handleSaveBill}
       />
+
+      {currentMonth && (
+        <IncomeDetailsDialog
+          open={isIncomeDialogOpen}
+          onOpenChange={setIsIncomeDialogOpen}
+          month={currentMonth}
+          onSave={async (data) => {
+            await updateMonth(currentMonth.id, data);
+          }}
+        />
+      )}
 
       <AlertDialog open={!!billToDelete} onOpenChange={(open) => !open && setBillToDelete(null)}>
         <AlertDialogContent>

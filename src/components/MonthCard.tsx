@@ -26,7 +26,7 @@ export default function MonthCard({ month, summary, onEdit, onDelete }: MonthCar
   return (
     <Card className="hover:shadow-md transition-shadow h-full border-l-4 group relative"
       style={{ borderLeftColor: isPositive ? '#22c55e' : '#ef4444' }}>
-      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+      <div className="absolute top-3 right-3 text-muted-foreground/50 hover:text-foreground transition-colors">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-8 w-8">

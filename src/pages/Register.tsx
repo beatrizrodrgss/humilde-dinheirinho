@@ -46,14 +46,15 @@ export default function Register() {
         description: 'Você já pode começar a usar o app.',
       });
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { code?: string };
       let errorMessage = 'Ocorreu um erro ao criar a conta';
 
-      if (error.code === 'auth/email-already-in-use') {
+      if (err.code === 'auth/email-already-in-use') {
         errorMessage = 'Este email já está em uso.';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (err.code === 'auth/invalid-email') {
         errorMessage = 'Email inválido.';
-      } else if (error.code === 'auth/weak-password') {
+      } else if (err.code === 'auth/weak-password') {
         errorMessage = 'A senha é muito fraca.';
       }
 

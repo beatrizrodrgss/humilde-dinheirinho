@@ -49,7 +49,9 @@ export function useMonths() {
         // Calculate summary
         const income_start = Number(monthData.income_start) || 0;
         const income_middle = Number(monthData.income_middle) || 0;
-        const total_income = income_start + income_middle;
+        const extra_incomes = monthData.extra_incomes || [];
+        const total_extra = extra_incomes.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+        const total_income = income_start + income_middle + total_extra;
 
         const expenses_start = bills
           .filter((b) => b.type === 'start')
@@ -96,6 +98,7 @@ export function useMonths() {
       income_start: 0,
       income_middle: 0,
       created_at: new Date().toISOString(),
+      extra_incomes: [],
     });
   }, [user]);
 

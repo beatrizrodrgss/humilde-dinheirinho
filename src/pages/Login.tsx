@@ -23,16 +23,17 @@ export default function Login() {
       await signInWithEmailAndPassword(auth, email, password);
       toast.success('Login realizado com sucesso!');
       navigate('/dashboard');
-    } catch (error: any) {
+    } catch (error) {
+      const err = error as { code?: string };
       let errorMessage = 'Verifique suas credenciais e tente novamente.';
 
-      if (error.code === 'auth/user-not-found') {
+      if (err.code === 'auth/user-not-found') {
         errorMessage = 'Usuário não encontrado.';
-      } else if (error.code === 'auth/wrong-password') {
+      } else if (err.code === 'auth/wrong-password') {
         errorMessage = 'Senha incorreta.';
-      } else if (error.code === 'auth/invalid-email') {
+      } else if (err.code === 'auth/invalid-email') {
         errorMessage = 'Email inválido.';
-      } else if (error.code === 'auth/invalid-credential') {
+      } else if (err.code === 'auth/invalid-credential') {
         errorMessage = 'Credenciais inválidas.';
       }
 

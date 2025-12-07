@@ -41,7 +41,7 @@ export default function MonthDialog({ open, onOpenChange, monthToEdit, onSave }:
                 });
             }
         }
-    }, [open, monthToEdit]);
+    }, [open, monthToEdit, current.year, current.month]);
 
     const handleSubmit = async () => {
         setLoading(true);

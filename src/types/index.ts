@@ -11,6 +11,11 @@ export interface Month {
   name?: string; // Custom name for the month
   income_start: number;
   income_middle: number;
+  extra_incomes?: {
+    id: string;
+    name: string;
+    amount: number;
+  }[];
   created_at: string;
 }
 

@@ -5,14 +5,18 @@ import { ArrowDownCircle, ArrowUpCircle, Wallet } from 'lucide-react';
 
 interface FinancialSummaryProps {
   summary: MonthSummary;
+  onIncomeClick?: () => void;
 }
 
-export default function FinancialSummary({ summary }: FinancialSummaryProps) {
+export default function FinancialSummary({ summary, onIncomeClick }: FinancialSummaryProps) {
   const isPositive = summary.balance >= 0;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <Card className="bg-green-50 border-green-100">
+      <Card
+        className={`bg-green-50 border-green-100 ${onIncomeClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+        onClick={onIncomeClick}
+      >
         <CardContent className="p-4 flex items-center gap-4">
           <div className="p-3 bg-green-100 rounded-full text-green-600">
             <ArrowUpCircle className="w-6 h-6" />

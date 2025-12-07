@@ -21,7 +21,7 @@ export default function Layout() {
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-primary-foreground">
               <Wallet className="w-5 h-5" />
             </div>
-            <span className="font-bold text-xl hidden sm:inline-block">Humilde Dinheirinho</span>
+            <span className="font-bold text-xl hidden sm:inline-block">Controle financeiro</span>
           </Link>
 
           <div className="flex items-center gap-4">
