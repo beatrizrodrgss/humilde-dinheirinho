@@ -85,12 +85,12 @@ export function useMonths() {
   }, [user]);
 
   // Create new month (Auto ID to allow duplicates/custom names)
-  const createMonth = useCallback(async (year: number, month: number, name?: string) => {
+  const createMonth = useCallback(async (year: number, month: number, name?: string, cloneFromId?: string) => {
     if (!user) return;
 
     const monthsRef = collection(db, `users/${user.uid}/months`);
 
-    await addDoc(monthsRef, {
+    const newMonthRef = await addDoc(monthsRef, {
       user_id: user.uid,
       year,
       month,
@@ -100,6 +100,34 @@ export function useMonths() {
       created_at: new Date().toISOString(),
       extra_incomes: [],
     });
+
+    // Handle cloning
+    if (cloneFromId) {
+      try {
+        const sourceBillsRef = collection(db, `users/${user.uid}/months/${cloneFromId}/bills`);
+        const sourceBillsSnapshot = await getDocs(sourceBillsRef);
+
+        const batch = writeBatch(db);
+        const newBillsRef = collection(db, `users/${user.uid}/months/${newMonthRef.id}/bills`);
+
+        sourceBillsSnapshot.forEach((billDoc) => {
+          const billData = billDoc.data() as Bill;
+          const newBillRef = doc(newBillsRef); // Auto ID for new bill
+
+          batch.set(newBillRef, {
+            ...billData,
+            month_id: newMonthRef.id,
+            status: 'pending', // Reset status
+            created_at: new Date().toISOString(),
+          });
+        });
+
+        await batch.commit();
+      } catch (error) {
+        console.error("Error cloning bills:", error);
+        // Optionally delete the created month if cloning fails, or just warn
+      }
+    }
   }, [user]);
 
   // Update month (name or income)

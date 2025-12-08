@@ -34,8 +34,8 @@ export class ErrorBoundary extends Component<Props, State> {
                 <AlertTriangle className="w-8 h-8" />
               </div>
             </div>
-            <h1 className="text-xl font-bold text-gray-900 mb-2">Algo deu errado</h1>
-            <p className="text-gray-600 mb-4 text-sm">
+            <h1 className="text-xl font-bold text-foreground mb-2">Algo deu errado</h1>
+            <p className="text-muted-foreground mb-4 text-sm">
               Ocorreu um erro inesperado na aplicação.
             </p>
             {this.state.error && (

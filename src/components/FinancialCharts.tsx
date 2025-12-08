@@ -140,7 +140,7 @@ export default function FinancialCharts({ month, bills, summary }: FinancialChar
                                         verticalAlign="bottom"
                                         height={36}
                                         iconType="circle"
-                                        formatter={(value) => <span className="text-sm text-gray-600">{value}</span>}
+                                        formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
                                     />
                                 </PieChart>
                             </ResponsiveContainer>

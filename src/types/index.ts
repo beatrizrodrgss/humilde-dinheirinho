@@ -9,6 +9,7 @@ export interface Month {
   year: number;
   month: number;
   name?: string; // Custom name for the month
+  cloneFromId?: string; // Optional ID to clone bills from
   income_start: number;
   income_middle: number;
   extra_incomes?: {
@@ -16,6 +17,9 @@ export interface Month {
     name: string;
     amount: number;
   }[];
+  savings_goal?: number;
+  savings_goal_name?: string;
+  current_savings?: number;
   created_at: string;
 }
 
@@ -30,7 +34,8 @@ export interface Bill {
   amount: number;
   type: BillType;
   status: BillStatus;
-  due_date?: string;
+  due_day?: number; // Day of month (1-31) when bill is due
+  category?: string;
   created_at: string;
 }
 

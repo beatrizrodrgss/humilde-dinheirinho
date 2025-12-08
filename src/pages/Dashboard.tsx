@@ -24,13 +24,13 @@ export default function Dashboard() {
   const [editingMonth, setEditingMonth] = useState<Month | null>(null);
   const [monthToDelete, setMonthToDelete] = useState<string | null>(null);
 
-  const handleSaveMonth = async (year: number, month: number, name: string) => {
+  const handleSaveMonth = async (year: number, month: number, name: string, cloneFromId?: string) => {
     try {
       if (editingMonth) {
         await updateMonth(editingMonth.id, { year, month, name });
         toast.success('Mês atualizado!');
       } else {
-        await createMonth(year, month, name);
+        await createMonth(year, month, name, cloneFromId);
         toast.success('Mês criado com sucesso!');
       }
       setIsDialogOpen(false); // Close dialog after saving
@@ -79,7 +79,7 @@ export default function Dashboard() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex items-center justify-between border-b pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Meus Meses</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Meus Meses</h1>
           <p className="text-muted-foreground mt-1">Gerencie seu histórico financeiro</p>
         </div>
         <Button onClick={handleNewMonth} className="gap-2 shadow-sm hover:shadow-md transition-all">
@@ -89,12 +89,12 @@ export default function Dashboard() {
       </div>
 
       {months.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+        <div className="flex flex-col items-center justify-center py-20 bg-muted/50 rounded-xl border border-dashed border-border">
           <div className="p-4 bg-white rounded-full shadow-sm mb-4">
             <Calendar className="w-10 h-10 text-primary/60" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Nenhum mês encontrado</h3>
-          <p className="text-gray-500 mb-6 max-w-sm text-center">
+          <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum mês encontrado</h3>
+          <p className="text-muted-foreground mb-6 max-w-sm text-center">
             Crie seu primeiro mês para começar a organizar suas finanças.
           </p>
           <Button onClick={handleNewMonth} variant="default" size="lg" className="gap-2">
@@ -120,6 +120,7 @@ export default function Dashboard() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
         monthToEdit={editingMonth}
+        availableMonths={months}
         onSave={handleSaveMonth}
       />
 

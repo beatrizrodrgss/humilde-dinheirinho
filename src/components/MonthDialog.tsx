@@ -12,17 +12,19 @@ interface MonthDialogProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     monthToEdit?: Month | null;
-    onSave: (year: number, month: number, name: string) => Promise<void>;
+    availableMonths?: Month[];
+    onSave: (year: number, month: number, name: string, cloneFromId?: string) => Promise<void>;
 }
 
-export default function MonthDialog({ open, onOpenChange, monthToEdit, onSave }: MonthDialogProps) {
+export default function MonthDialog({ open, onOpenChange, monthToEdit, availableMonths = [], onSave }: MonthDialogProps) {
     const [loading, setLoading] = useState(false);
     const current = getCurrentYearMonth();
 
     const [formData, setFormData] = useState({
         name: '',
         year: current.year.toString(),
-        month: current.month.toString()
+        month: current.month.toString(),
+        cloneFromId: 'none'
     });
 
     useEffect(() => {
@@ -31,13 +33,15 @@ export default function MonthDialog({ open, onOpenChange, monthToEdit, onSave }:
                 setFormData({
                     name: monthToEdit.name || '',
                     year: monthToEdit.year.toString(),
-                    month: monthToEdit.month.toString()
+                    month: monthToEdit.month.toString(),
+                    cloneFromId: 'none'
                 });
             } else {
                 setFormData({
                     name: '',
                     year: current.year.toString(),
-                    month: current.month.toString()
+                    month: current.month.toString(),
+                    cloneFromId: 'none'
                 });
             }
         }
@@ -49,7 +53,8 @@ export default function MonthDialog({ open, onOpenChange, monthToEdit, onSave }:
             await onSave(
                 Number(formData.year),
                 Number(formData.month),
-                formData.name
+                formData.name,
+                formData.cloneFromId !== 'none' ? formData.cloneFromId : undefined
             );
             onOpenChange(false);
         } catch (error) {
@@ -77,6 +82,31 @@ export default function MonthDialog({ open, onOpenChange, monthToEdit, onSave }:
                             placeholder="Ex: Férias, Reserva de Emergência..."
                         />
                     </div>
+
+                    {!monthToEdit && availableMonths.length > 0 && (
+                        <div className="space-y-2">
+                            <Label>Clonar contas de...</Label>
+                            <Select
+                                value={formData.cloneFromId}
+                                onValueChange={(v) => setFormData({ ...formData, cloneFromId: v })}
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione um mês para copiar" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">Não clonar (Começar do zero)</SelectItem>
+                                    {availableMonths.map(m => (
+                                        <SelectItem key={m.id} value={m.id}>
+                                            {m.name || `${getMonthName(m.month)}/${m.year}`}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            <p className="text-xs text-muted-foreground">
+                                Isso copiará todas as contas do mês selecionado para o novo mês.
+                            </p>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">

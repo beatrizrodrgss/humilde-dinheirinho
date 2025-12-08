@@ -52,10 +52,10 @@ export default function IncomeInput({ label, initialValue, onSave, colorClass }:
             <Label className={`text-xs ${colorClass}`}>{label}</Label>
             <div className="flex gap-2">
                 <div className="relative flex-1">
-                    <span className="absolute left-3 top-2.5 text-gray-500 text-sm">R$</span>
+                    <span className="absolute left-3 top-2.5 text-muted-foreground text-sm">R$</span>
                     <Input
                         type="number"
-                        className="pl-9 bg-white"
+                        className="pl-9 bg-background"
                         value={value}
                         onChange={handleChange}
                         placeholder="0,00"

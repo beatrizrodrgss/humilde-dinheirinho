@@ -6,6 +6,7 @@ import { ArrowRight, CalendarDays, MoreVertical, Pencil, Trash2 } from 'lucide-r
 import { Link } from 'react-router-dom';
 import { Button } from './ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu';
+import { CountUp } from './ui/count-up';
 
 interface MonthCardProps {
   month: Month;
@@ -24,8 +25,8 @@ export default function MonthCard({ month, summary, onEdit, onDelete }: MonthCar
   const isPositive = balance >= 0;
 
   return (
-    <Card className="hover:shadow-md transition-shadow h-full border-l-4 group relative"
-      style={{ borderLeftColor: isPositive ? '#22c55e' : '#ef4444' }}>
+    <Card className="hover:shadow-lg transition-all duration-300 h-full group relative bg-card/40 backdrop-blur-md border border-white/10"
+      style={{ borderLeftColor: isPositive ? '#22c55e' : '#ef4444', borderLeftWidth: '4px' }}>
       <div className="absolute top-3 right-3 text-muted-foreground/50 hover:text-foreground transition-colors">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -71,19 +72,19 @@ export default function MonthCard({ month, summary, onEdit, onDelete }: MonthCar
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Receitas:</span>
               <span className="font-medium text-green-600">
-                {formatCurrency(summary?.total_income ?? 0)}
+                <CountUp value={summary?.total_income ?? 0} />
               </span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Despesas:</span>
               <span className="font-medium text-red-600">
-                {formatCurrency(summary?.total_expenses ?? 0)}
+                <CountUp value={summary?.total_expenses ?? 0} />
               </span>
             </div>
             <div className="pt-2 mt-2 border-t flex justify-between font-bold">
               <span>Saldo:</span>
               <span className={isPositive ? 'text-green-600' : 'text-red-600'}>
-                {formatCurrency(balance)}
+                <CountUp value={balance} />
               </span>
             </div>
           </div>

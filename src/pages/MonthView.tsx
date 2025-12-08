@@ -8,9 +8,14 @@ import FinancialSummary from '@/components/FinancialSummary';
 import IncomeInput from '@/components/IncomeInput';
 import BillDialog from '@/components/BillDialog';
 import IncomeDetailsDialog from '@/components/IncomeDetailsDialog';
+import SavingsGoalCard from '@/components/SavingsGoalCard';
 import FinancialCharts from '@/components/FinancialCharts';
 import MonthHeader from './month-view/MonthHeader';
 import MonthContent from './month-view/MonthContent';
+import DueDateSummaryBanner from '@/components/DueDateSummaryBanner';
+import CategoryStatsCard from '@/components/CategoryStatsCard';
+import KeyboardShortcutsHelp from '@/components/KeyboardShortcutsHelp';
+import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { Loader2 } from 'lucide-react';
-import { getMonthName } from '@/lib/utils';
+import { getMonthName, formatCurrency } from '@/lib/utils';
 import { Bill, BillType } from '@/types';
 import { toast } from 'sonner';
 
@@ -44,6 +49,8 @@ export default function MonthView() {
   const [editingBill, setEditingBill] = useState<Bill | null>(null);
   const [dialogType, setDialogType] = useState<BillType>('start');
   const [billToDelete, setBillToDelete] = useState<string | null>(null);
+  const [showOnlyUnpaid, setShowOnlyUnpaid] = useState(false);
+  const [showShortcutsHelp, setShowShortcutsHelp] = useState(false);
 
   const handleSaveIncome = async (start: number, middle: number) => {
     // Legacy handler, kept for backward compatibility if needed, but primary update is via dialog now
@@ -71,12 +78,20 @@ export default function MonthView() {
       await updateBill(editingBill.id, billData);
       toast.success('Conta atualizada!');
     } else {
-      await addBill({
+      const newBill: any = {
         name: billData.name!,
         amount: billData.amount!,
         type: billData.type!,
+        category: billData.category!,
         status: 'pending'
-      });
+      };
+
+      // Only include due_day if it exists
+      if (billData.due_day) {
+        newBill.due_day = billData.due_day;
+      }
+
+      await addBill(newBill);
       toast.success('Conta adicionada!');
     }
   };
@@ -98,9 +113,60 @@ export default function MonthView() {
     }
   };
 
+  // Keyboard Shortcuts
+  useKeyboardShortcuts([
+    {
+      key: 'n',
+      ctrl: true,
+      action: () => {
+        setEditingBill(null);
+        setDialogType('start');
+        setIsDialogOpen(true);
+      },
+      description: 'Nova conta'
+    },
+    {
+      key: 'e',
+      ctrl: true,
+      action: () => {
+        // Trigger export (will be handled by MonthHeader)
+        const exportBtn = document.querySelector('[data-export-trigger]');
+        if (exportBtn) (exportBtn as HTMLElement).click();
+      },
+      description: 'Exportar'
+    },
+    {
+      key: 'f',
+      ctrl: true,
+      action: () => setShowOnlyUnpaid(!showOnlyUnpaid),
+      description: 'Toggle filtro'
+    },
+    {
+      key: '?',
+      action: () => setShowShortcutsHelp(true),
+      description: 'Ajuda'
+    },
+    {
+      key: 'Escape',
+      action: () => {
+        setIsDialogOpen(false);
+        setIsIncomeDialogOpen(false);
+        setShowShortcutsHelp(false);
+      },
+      description: 'Fechar'
+    }
+  ], !loadingMonths);
+
   // Computed lists
-  const startBills = useMemo(() => bills.filter(b => b.type === 'start'), [bills]);
-  const middleBills = useMemo(() => bills.filter(b => b.type === 'middle'), [bills]);
+  const startBills = useMemo(() => {
+    const filtered = bills.filter(b => b.type === 'start');
+    return showOnlyUnpaid ? filtered.filter(b => b.status === 'pending') : filtered;
+  }, [bills, showOnlyUnpaid]);
+
+  const middleBills = useMemo(() => {
+    const filtered = bills.filter(b => b.type === 'middle');
+    return showOnlyUnpaid ? filtered.filter(b => b.status === 'pending') : filtered;
+  }, [bills, showOnlyUnpaid]);
 
   const totalStart = useMemo(() => startBills.reduce((acc, b) => acc + b.amount, 0), [startBills]);
   const totalMiddle = useMemo(() => middleBills.reduce((acc, b) => acc + b.amount, 0), [middleBills]);
@@ -137,9 +203,20 @@ export default function MonthView() {
   }
 
   return (
-    <div className="space-y-6 pb-20 animate-in fade-in duration-500">
+    <div id="month-export-container" className="space-y-6 pb-20 animate-in fade-in duration-500">
       {/* Header */}
-      <MonthHeader year={currentMonth.year} month={currentMonth.month} />
+      <MonthHeader
+        year={currentMonth.year}
+        month={currentMonth.month}
+        showOnlyUnpaid={showOnlyUnpaid}
+        onToggleFilter={setShowOnlyUnpaid}
+      />
+
+      {/* Due Date Alerts */}
+      <DueDateSummaryBanner
+        bills={bills}
+        onFilterOverdue={() => setShowOnlyUnpaid(true)}
+      />
 
       {/* Summary Cards */}
       {summary && (
@@ -148,6 +225,31 @@ export default function MonthView() {
           onIncomeClick={() => setIsIncomeDialogOpen(true)}
         />
       )}
+
+      {currentMonth && summary && (
+        <SavingsGoalCard
+          currentSavings={currentMonth.current_savings || 0}
+          goalAmount={currentMonth.savings_goal}
+          goalName={currentMonth.savings_goal_name}
+          onUpdateGoal={async (name, amount) => {
+            await updateMonth(currentMonth.id, {
+              savings_goal_name: name,
+              savings_goal: amount
+            });
+            toast.success('Meta atualizada! Vamos lá! 🚀');
+          }}
+          onAddToSavings={async (amount) => {
+            const newTotal = (currentMonth.current_savings || 0) + amount;
+            await updateMonth(currentMonth.id, {
+              current_savings: newTotal
+            });
+            toast.success(`Guardado! Você já tem ${formatCurrency(newTotal)} 💰`);
+          }}
+        />
+      )}
+
+      {/* Category Statistics */}
+      {bills.length > 0 && <CategoryStatsCard bills={bills} />}
 
       {/* Charts */}
       {currentMonth && summary && (
@@ -189,6 +291,11 @@ export default function MonthView() {
           }}
         />
       )}
+
+      <KeyboardShortcutsHelp
+        open={showShortcutsHelp}
+        onOpenChange={setShowShortcutsHelp}
+      />
 
       <AlertDialog open={!!billToDelete} onOpenChange={(open) => !open && setBillToDelete(null)}>
         <AlertDialogContent>
